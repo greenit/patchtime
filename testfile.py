@@ -2,37 +2,45 @@
 
 import requests
 import datefinder
+import datetime
+from dateutil import parser
 from bs4 import BeautifulSoup
-from pprint import pprint
 
 url = "https://en-forum.guildwars2.com/forum/6-game-update-notes/"
 
-def main():
-    global url
+def get_soup(url):
     data = requests.get(url)
+    return BeautifulSoup(data.text, 'html.parser')
 
-    my_data = []
-
-    html = BeautifulSoup(data.text, 'html.parser')
-    #print(html)
-    links = html.find_all("a")
-    #print(articles)
-    #print(*html.find_all("a"), sep="\n")
+def link_crawler(url, text=""):
+    soup = get_soup(url)
+    links = soup.find_all("a")
+    result = None
     for link in links:
         title = link.get("title")
-        if title and "Game Update" in title:
-            print(link)
+        href = link.get("href")
+        if title and text in title:
+            dates = datefinder.find_dates(title)
+            for date in dates:
+                if date:
+                    break
+            result = (title, href, date)
             break
-        #title = article.select('.card-title')[0].get_text()
-        #excerpt = article.select('.card-text')[0].get_text()
-        #pub_date = article.select('.card-footer small')[0].get_text()
+    return result
 
-        #my_data.append({"title": title, "excerpt": excerpt, "pub_date": pub_date})
-    
+def latest_comment_time(url):
+    soup = get_soup(url)
+    li = soup.select("div.ipsComment_meta a time")
 
+    for post in li:
+        time = parser.isoparse(post.get('datetime'))
+    return time
 
-
-    #pprint(my_data)
+def main():
+    global url
+    thread = link_crawler(url, "Game Update")
+    time = latest_comment_time(thread[1])
+    print(time)
 
 if __name__ == "__main__":
     main()
