@@ -1,4 +1,4 @@
-# just a hello world test file
+# getting the latest patch time
 
 import requests
 import datefinder
